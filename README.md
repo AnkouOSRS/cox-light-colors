@@ -8,4 +8,5 @@ If you find any bugs or would like to request a feature, please do so at the [is
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+ - 7/21/20 - Add option to choose specific uniques to get their own color
  - 7/19/20 - Initial release
