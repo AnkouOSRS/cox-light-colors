@@ -107,6 +107,6 @@ public interface CoxLightColorsConfig extends Config
 	)
 	default String specificUniqueNames()
 	{
-		return "Twisted bow, Kodai Insignia, Elder Maul";
+		return "Twisted bow, Kodai insignia, Elder maul";
 	}
 }
