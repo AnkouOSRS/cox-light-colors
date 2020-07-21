@@ -33,6 +33,7 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -53,6 +54,7 @@ public class CoxLightColorsPlugin extends Plugin
 
 	private GameObject lightObject;
 	private GameObject entranceObject;
+	private String uniqueItemReceived;
 
 	private static final int LIGHT_OBJECT_ID = 28848;
 	private static final int OLM_ENTRANCE_ID = 29879;
@@ -85,7 +87,34 @@ public class CoxLightColorsPlugin extends Plugin
 		currentLightType = client.getVarbitValue(VARBIT_LIGHT_TYPE);
 		if (lightObject != null)
 		{
-			recolorAllFaces(lightObject.getRenderable().getModel(), getNewLightColor());
+			recolorAllFaces(lightObject.getRenderable().getModel(),
+					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
+		}
+		if (client.getVar(Varbits.IN_RAID) != 1)
+		{
+			uniqueItemReceived = null;
+			lightObject = null;
+			entranceObject = null;
+		}
+	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage chatMessage) {
+		if (client.getLocalPlayer() == null || client.getLocalPlayer().getName() == null)
+			return;
+
+		String message = Text.removeTags(chatMessage.getMessage());
+
+		if (chatMessage.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION
+				&& message.startsWith(client.getLocalPlayer().getName() + " - "))
+		{
+			uniqueItemReceived = message.split(" - ")[1];
+
+			if (lightObject != null)
+			{
+				recolorAllFaces(lightObject.getRenderable().getModel(),
+						(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
+			}
 		}
 	}
 
@@ -96,7 +125,8 @@ public class CoxLightColorsPlugin extends Plugin
 		if (obj.getId() == LIGHT_OBJECT_ID)
 		{
 			lightObject = obj;
-			recolorAllFaces(lightObject.getRenderable().getModel(), getNewLightColor());
+			recolorAllFaces(lightObject.getRenderable().getModel(),
+					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
 		}
 		else if (obj.getId() == OLM_ENTRANCE_ID)
 		{
@@ -123,12 +153,28 @@ public class CoxLightColorsPlugin extends Plugin
 	{
 		if (lightObject != null)
 		{
-			recolorAllFaces(lightObject.getRenderable().getModel(), getNewLightColor());
+			recolorAllFaces(lightObject.getRenderable().getModel(),
+					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
 		}
 		if (entranceObject != null)
 		{
 			recolorAllFaces(entranceObject.getRenderable().getModel(), config.olmEntrance());
 		}
+	}
+
+	private boolean dropOptainedIsSpecial()
+	{
+		String[] specifiedItems = config.specificUniqueNames().split(",");
+		if (uniqueItemReceived != null && !uniqueItemReceived.isEmpty())
+		{
+			for (String specifiedItem : specifiedItems) {
+				if (specifiedItem.trim().toLowerCase().equals(uniqueItemReceived.toLowerCase()))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private Color getNewLightColor() {

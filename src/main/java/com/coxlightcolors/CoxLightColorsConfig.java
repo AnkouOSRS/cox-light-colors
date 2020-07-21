@@ -87,4 +87,26 @@ public interface CoxLightColorsConfig extends Config
 	{
 		return Color.GREEN;
 	}
+
+	@ConfigItem(
+			keyName = "specificUniqueColor",
+			name = "Specific Item",
+			description = "Color of the light when an item specified below is obtained",
+			position = 6
+	)
+	default Color specificUniqueColor()
+	{
+		return Color.YELLOW;
+	}
+
+	@ConfigItem(
+			keyName = "specificUniqueNames",
+			name = "Specific Items",
+			description = "List of items that should show the 'specific item' colored light when obtained (comma-separated!)",
+			position = 7
+	)
+	default String specificUniqueNames()
+	{
+		return "Twisted bow, Kodai Insignia, Elder Maul";
+	}
 }
