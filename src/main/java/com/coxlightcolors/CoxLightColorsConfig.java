@@ -90,7 +90,7 @@ public interface CoxLightColorsConfig extends Config
 
 	@ConfigItem(
 			keyName = "specificUniqueColor",
-			name = "Specific Item",
+			name = "Specific Unique",
 			description = "Color of the light when an item specified below is obtained",
 			position = 6
 	)
@@ -101,7 +101,7 @@ public interface CoxLightColorsConfig extends Config
 
 	@ConfigItem(
 			keyName = "specificUniqueNames",
-			name = "Specific Items",
+			name = "Specific Uniques",
 			description = "List of items that should show the 'specific item' colored light when obtained (comma-separated!)",
 			position = 7
 	)
