@@ -37,6 +37,8 @@ import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @PluginDescriptor(
 		name = "CoX Light Colors",
@@ -55,6 +57,10 @@ public class CoxLightColorsPlugin extends Plugin
 	private GameObject lightObject;
 	private GameObject entranceObject;
 	private String uniqueItemReceived;
+
+	private static final String SPECIAL_LOOT_MESSAGE = "Special loot:";
+	private static final Pattern SPECIAL_DROP_MESSAGE = Pattern.compile("(.+) - (.+)");
+	private boolean waitForSpecialLoot;
 
 	private static final int LIGHT_OBJECT_ID = 28848;
 	private static final int OLM_ENTRANCE_ID = 29879;
@@ -77,8 +83,7 @@ public class CoxLightColorsPlugin extends Plugin
 	@Override
 	protected void shutDown() throws Exception
 	{
-		lightObject = null;
-		entranceObject = null;
+
 	}
 
 	@Subscribe
@@ -90,30 +95,51 @@ public class CoxLightColorsPlugin extends Plugin
 			recolorAllFaces(lightObject.getRenderable().getModel(),
 					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
 		}
-		if (client.getVar(Varbits.IN_RAID) != 1)
+		if (!isInRaid())
 		{
 			uniqueItemReceived = null;
 			lightObject = null;
 			entranceObject = null;
+			waitForSpecialLoot = false;
 		}
 	}
 
 	@Subscribe
 	public void onChatMessage(ChatMessage chatMessage) {
-		if (client.getLocalPlayer() == null || client.getLocalPlayer().getName() == null)
+		if (client.getLocalPlayer() == null)
 			return;
 
-		String message = Text.removeTags(chatMessage.getMessage());
-
-		if (chatMessage.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION
-				&& message.startsWith(client.getLocalPlayer().getName() + " - "))
+		if (chatMessage.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION)
 		{
-			uniqueItemReceived = message.split(" - ")[1];
+			String message = Text.removeTags(chatMessage.getMessage());
+			Matcher matcher;
 
-			if (lightObject != null)
+			if (message.startsWith(SPECIAL_LOOT_MESSAGE))
 			{
-				recolorAllFaces(lightObject.getRenderable().getModel(),
-						(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
+				waitForSpecialLoot = true;
+				log.debug("Special loot message encountered");
+			}
+			if (waitForSpecialLoot)
+			{
+				matcher = SPECIAL_DROP_MESSAGE.matcher(message);
+				if (matcher.find())
+				{
+					final String dropReceiver = matcher.group(1);
+					final String dropName = matcher.group(2);
+					log.debug("Special loot: {} received by {}", dropName, dropReceiver);
+
+					if (dropReceiver.equals(client.getLocalPlayer().getName()))
+					{
+						log.debug("Special loot was received by local player");
+						uniqueItemReceived = dropName;
+						if (lightObject != null)
+						{
+							log.debug("Light object exists. Recoloring it...");
+							recolorAllFaces(lightObject.getRenderable().getModel(),
+									(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
+						}
+					}
+				}
 			}
 		}
 	}
@@ -153,6 +179,7 @@ public class CoxLightColorsPlugin extends Plugin
 	{
 		if (lightObject != null)
 		{
+			log.debug("Light Object exists on config changed. Unique: {}", (uniqueItemReceived != null ? uniqueItemReceived : "null"));
 			recolorAllFaces(lightObject.getRenderable().getModel(),
 					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
 		}
@@ -162,19 +189,39 @@ public class CoxLightColorsPlugin extends Plugin
 		}
 	}
 
-	private boolean dropOptainedIsSpecial()
+	protected boolean dropOptainedIsSpecial()
 	{
-		String[] specifiedItems = config.specificUniqueNames().split(",");
-		if (uniqueItemReceived != null && !uniqueItemReceived.isEmpty())
+		if (uniqueItemReceived == null)
+			return false;
+		switch (uniqueItemReceived.toLowerCase().trim())
 		{
-			for (String specifiedItem : specifiedItems) {
-				if (specifiedItem.trim().toLowerCase().equals(uniqueItemReceived.toLowerCase()))
-				{
-					return true;
-				}
-			}
+			case "twisted bow":
+				return config.specifyTwistedBow();
+			case "kodai insignia":
+				return config.specifyKodaiInsignia();
+			case "elder maul":
+				return config.specifyElderMaul();
+			case "dragon claws":
+				return config.specifyDragonClaws();
+			case "ancestral hat":
+				return config.specifyAncestralHat();
+			case "ancestral robe top":
+				return config.specifyAncestralRobeTop();
+			case "ancestral robe bottom":
+				return config.specifyAncestralRobeBottom();
+			case "dinh's bulwark":
+				return config.specifyDinhsBulwark();
+			case "dragon hunter crossbow":
+				return config.specifyDragonHunterCrossbow();
+			case "twisted buckler":
+				return config.specifyTwistedBuckler();
+			case "arcane prayer scroll":
+				return config.specifyArcanePrayerScroll();
+			case "dexterous prayer scroll":
+				return config.specifyDexPrayerScroll();
+			default:
+				return false;
 		}
-		return false;
 	}
 
 	private Color getNewLightColor() {
@@ -190,7 +237,7 @@ public class CoxLightColorsPlugin extends Plugin
 		}
 	}
 
-	private void recolorAllFaces(Model model, Color color)
+	protected void recolorAllFaces(Model model, Color color)
 	{
 		if (model == null)
 			return;
@@ -222,6 +269,10 @@ public class CoxLightColorsPlugin extends Plugin
 		}
 	}
 
+	private boolean isInRaid() {
+		return client.getVar(Varbits.IN_RAID) == 1;
+	}
+
 	private int colorToRs2hsb(Color color)
 	{
 		float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
@@ -236,3 +287,4 @@ public class CoxLightColorsPlugin extends Plugin
 		return (encode_hue << 10) + (encode_saturation << 7) + (encode_brightness);
 	}
 }
+

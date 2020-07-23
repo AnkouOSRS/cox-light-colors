@@ -27,17 +27,33 @@ package com.coxlightcolors;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 import java.awt.*;
 
 @ConfigGroup("coxlightcolors")
 public interface CoxLightColorsConfig extends Config
 {
+	@ConfigSection(
+			name = "Light colors",
+			description = "Colors of the lights above the loot chest for different scenarios",
+			position = 0
+	)
+	String colorsSection = "colors";
+
+	@ConfigSection(
+			name = "Specific Uniques",
+			description = "Uniques that, when obtained, will use the 'Specific Unique' color for the light",
+			position = 1
+	)
+	String uniquesSection = "uniques";
+
 	@ConfigItem(
 			keyName = "noUnique",
 			name = "No Unique",
 			description = "Color of light when no unique item is obtained",
-			position = 1
+			position = 0,
+			section = colorsSection
 	)
 	default Color noUnique()
 	{
@@ -48,7 +64,8 @@ public interface CoxLightColorsConfig extends Config
 			keyName = "unique",
 			name = "Unique",
 			description = "Color of light when a unique item is obtained (besides twisted kit or dust)",
-			position = 2
+			position = 1,
+			section = colorsSection
 	)
 	default Color unique()
 	{
@@ -59,7 +76,8 @@ public interface CoxLightColorsConfig extends Config
 			keyName = "dust",
 			name = "Metamorphic Dust",
 			description = "Color of light when metamorphic dust is obtained",
-			position = 3
+			position = 2,
+			section = colorsSection
 	)
 	default Color dust()
 	{
@@ -70,7 +88,8 @@ public interface CoxLightColorsConfig extends Config
 			keyName = "twistedKit",
 			name = "Twisted Kit",
 			description = "Color of light when a twisted kit is obtained",
-			position = 4
+			position = 3,
+			section = colorsSection
 	)
 	default Color twistedKit()
 	{
@@ -81,7 +100,8 @@ public interface CoxLightColorsConfig extends Config
 			keyName = "olmEntrance",
 			name = "Olm Entrance",
 			description = "Color of the barrier used to enter the Olm room",
-			position = 5
+			position = 4,
+			section = colorsSection
 	)
 	default Color olmEntrance()
 	{
@@ -92,21 +112,144 @@ public interface CoxLightColorsConfig extends Config
 			keyName = "specificUniqueColor",
 			name = "Specific Unique",
 			description = "Color of the light when an item specified below is obtained",
-			position = 6
+			position = 5,
+			section = colorsSection
 	)
 	default Color specificUniqueColor()
 	{
-		return Color.YELLOW;
+		return Color.RED;
 	}
 
 	@ConfigItem(
-			keyName = "specificUniqueNames",
-			name = "Specific Uniques",
-			description = "List of items that should show the 'specific item' colored light when obtained (comma-separated!)",
-			position = 7
+			keyName = "specifyTwistedBow",
+			name = "Twisted bow",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
 	)
-	default String specificUniqueNames()
+	default boolean specifyTwistedBow()
 	{
-		return "Twisted bow, Kodai insignia, Elder maul";
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "specifyKodaiInsignia",
+			name = "Kodai insignia",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyKodaiInsignia()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "specifyElderMaul",
+			name = "Elder maul",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyElderMaul()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "specifyDragonClaws",
+			name = "Dragon Claws",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyDragonClaws()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyAncestralHat",
+			name = "Ancestral hat",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyAncestralHat()
+	{
+		return false;
+	}
+
+
+	@ConfigItem(
+			keyName = "specifyAncestralRobeTop",
+			name = "Ancestral robe top",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyAncestralRobeTop()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyAncestralRobeBottom",
+			name = "Ancestral robe bottom",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyAncestralRobeBottom()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyDinhsBulwark",
+			name = "Dinh's bulwark",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyDinhsBulwark()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyDragonHunterCrossbow",
+			name = "Dragon hunter crossbow",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyDragonHunterCrossbow()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyTwistedBuckler",
+			name = "Twisted buckler",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyTwistedBuckler()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyArcanePrayerScroll",
+			name = "Arcane prayer scroll",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyArcanePrayerScroll()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "specifyDexPrayerScroll",
+			name = "Dexterous Prayer Scroll",
+			description = "Color the light according to the 'Specific Unique' color when this item is obtained",
+			section = uniquesSection
+	)
+	default boolean specifyDexPrayerScroll()
+	{
+		return false;
 	}
 }
