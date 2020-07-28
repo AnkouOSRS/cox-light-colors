@@ -69,7 +69,7 @@ public interface CoxLightColorsConfig extends Config
 	)
 	default Color unique()
 	{
-		return Color.MAGENTA;
+		return Color.decode("#F155F5");
 	}
 
 	@ConfigItem(
@@ -105,7 +105,7 @@ public interface CoxLightColorsConfig extends Config
 	)
 	default Color olmEntrance()
 	{
-		return Color.GREEN;
+		return Color.decode("#8CFF0B");
 	}
 
 	@ConfigItem(
