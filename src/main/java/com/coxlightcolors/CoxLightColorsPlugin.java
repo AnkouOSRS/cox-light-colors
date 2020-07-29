@@ -66,7 +66,7 @@ public class CoxLightColorsPlugin extends Plugin
 	private static final int OLM_ENTRANCE_ID = 29879;
 	private static final int VARBIT_LIGHT_TYPE = 5456;
 
-	private static int currentLightType; // Default (0), Unique (1), Dust (2), Twisted Kit (3)
+	private static Integer currentLightType; // Default (null), No Unique (0), Unique (1), Dust (2), Twisted Kit (3)
 
 	@Provides
 	CoxLightColorsConfig getConfig(ConfigManager configManager)
@@ -77,7 +77,7 @@ public class CoxLightColorsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-
+		updateLightColor();
 	}
 
 	@Override
@@ -89,12 +89,7 @@ public class CoxLightColorsPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
-		currentLightType = client.getVarbitValue(VARBIT_LIGHT_TYPE);
-		if (lightObject != null)
-		{
-			recolorAllFaces(lightObject.getRenderable().getModel(),
-					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
-		}
+		updateLightColor();
 		if (!isInRaid())
 		{
 			uniqueItemReceived = null;
@@ -114,6 +109,10 @@ public class CoxLightColorsPlugin extends Plugin
 			String message = Text.removeTags(chatMessage.getMessage());
 			Matcher matcher;
 
+			if (message.contains("your raid is complete!"))
+			{
+				uniqueItemReceived = null;
+			}
 			if (message.startsWith(SPECIAL_LOOT_MESSAGE))
 			{
 				waitForSpecialLoot = true;
@@ -151,8 +150,7 @@ public class CoxLightColorsPlugin extends Plugin
 		if (obj.getId() == LIGHT_OBJECT_ID)
 		{
 			lightObject = obj;
-			recolorAllFaces(lightObject.getRenderable().getModel(),
-					(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
+			updateLightColor();
 		}
 		else if (obj.getId() == OLM_ENTRANCE_ID)
 		{
@@ -189,9 +187,21 @@ public class CoxLightColorsPlugin extends Plugin
 		}
 	}
 
-	protected boolean dropOptainedIsSpecial()
+	private void updateLightColor() {
+		if (isInRaid())
+		{
+			currentLightType = client.getVarbitValue(VARBIT_LIGHT_TYPE);
+			if (lightObject != null)
+			{
+				recolorAllFaces(lightObject.getRenderable().getModel(),
+						(dropOptainedIsSpecial() ? config.specificUniqueColor() : getNewLightColor()));
+			}
+		}
+	}
+
+	private boolean dropOptainedIsSpecial()
 	{
-		if (uniqueItemReceived == null)
+		if (uniqueItemReceived == null || uniqueItemReceived.isEmpty())
 			return false;
 		switch (uniqueItemReceived.toLowerCase().trim())
 		{
@@ -225,7 +235,11 @@ public class CoxLightColorsPlugin extends Plugin
 	}
 
 	private Color getNewLightColor() {
+		if (currentLightType == null)
+			return null;
 		switch (currentLightType) {
+			case 1:
+				return config.noUnique();
 			case 2:
 				return config.unique();
 			case 3:
@@ -233,14 +247,15 @@ public class CoxLightColorsPlugin extends Plugin
 			case 4:
 				return config.twistedKit();
 			default:
-				return config.noUnique();
+				return null;
 		}
 	}
 
-	protected void recolorAllFaces(Model model, Color color)
+	private void recolorAllFaces(Model model, Color color)
 	{
-		if (model == null)
+		if (model == null || color == null)
 			return;
+
 		int rs2hsb = colorToRs2hsb(color);
 		int[] faceColors1 = model.getFaceColors1();
 		int[] faceColors2 = model.getFaceColors2();
@@ -270,7 +285,7 @@ public class CoxLightColorsPlugin extends Plugin
 	}
 
 	private boolean isInRaid() {
-		return client.getVar(Varbits.IN_RAID) == 1;
+		return (client.getGameState() == GameState.LOGGED_IN && client.getVar(Varbits.IN_RAID) == 1);
 	}
 
 	private int colorToRs2hsb(Color color)
