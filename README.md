@@ -8,6 +8,7 @@ If you find any bugs or would like to request a feature, please do so at the [is
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+ - 7/29/20 - Fix bug relating to the light defaulting to white (e.g. when turning the plugin on after light spawns in)
  - 7/27/20 - Update default colors for uniques and the entrance to better match the color without the plugin.
  - 7/22/20 - Change specific uniques config to use checkboxes, update logic for what unique was obtained.
  - 7/21/20 - Add option to choose specific uniques to get their own color
