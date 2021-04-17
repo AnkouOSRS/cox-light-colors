@@ -34,15 +34,15 @@ import java.awt.*;
 @ConfigGroup("coxlightcolors")
 public interface CoxLightColorsConfig extends Config
 {
-	@ConfigSection(
-			name = "Light colors",
-			description = "Colors of the lights above the loot chest for different scenarios",
-			position = 0
-	)
-	String colorsSection = "colors";
+    @ConfigSection(
+            name = "Light colors",
+            description = "Colors of the lights above the loot chest for different scenarios",
+            position = 0
+    )
+    String colorsSection = "colors";
 
     @ConfigSection(
-            name = "Item groups",
+            name = "Groups (Experimental)",
             description = "Uniques that, when obtained, will use the 'Specific Unique' color for the light",
             position = 1
     )
@@ -56,17 +56,17 @@ public interface CoxLightColorsConfig extends Config
     )
     String togglesSection = "toggles";
 
-	@ConfigItem(
-			keyName = "standardLoot",
-			name = "Standard loot",
-			description = "Color of light when no unique item is obtained",
+    @ConfigItem(
+            keyName = "standardLoot",
+            name = "Standard loot",
+            description = "Color of light when no unique item is obtained",
             position = 0,
-			section = colorsSection
-	)
-	default Color standardLoot()
-	{
-		return Color.WHITE;
-	}
+            section = colorsSection
+    )
+    default Color standardLoot()
+    {
+        return Color.WHITE;
+    }
 
     @ConfigItem(
             keyName = "enableStandardLoot",
@@ -80,17 +80,17 @@ public interface CoxLightColorsConfig extends Config
         return true;
     }
 
-	@ConfigItem(
-			keyName = "unique",
-			name = "Unique",
-			description = "Color of light when a unique item is obtained (besides twisted kit or dust)",
+    @ConfigItem(
+            keyName = "unique",
+            name = "Unique",
+            description = "Color of light when a unique item is obtained (besides twisted kit or dust)",
             position = 2,
-			section = colorsSection
-	)
-	default Color unique()
-	{
-		return Color.decode("#F155F5");
-	}
+            section = colorsSection
+    )
+    default Color unique()
+    {
+        return Color.decode("#F155F5");
+    }
 
     @ConfigItem(
             keyName = "enableUnique",
@@ -104,17 +104,17 @@ public interface CoxLightColorsConfig extends Config
         return true;
     }
 
-	@ConfigItem(
-			keyName = "dust",
-			name = "Metamorphic Dust",
-			description = "Color of light when metamorphic dust is obtained",
+    @ConfigItem(
+            keyName = "dust",
+            name = "Metamorphic Dust",
+            description = "Color of light when metamorphic dust is obtained",
             position = 4,
-			section = colorsSection
-	)
-	default Color dust()
-	{
-		return Color.CYAN;
-	}
+            section = colorsSection
+    )
+    default Color dust()
+    {
+        return Color.CYAN;
+    }
 
     @ConfigItem(
             keyName = "enableDust",
@@ -128,17 +128,17 @@ public interface CoxLightColorsConfig extends Config
         return true;
     }
 
-	@ConfigItem(
-			keyName = "twistedKit",
-			name = "Twisted Kit",
-			description = "Color of light when a twisted kit is obtained",
+    @ConfigItem(
+            keyName = "twistedKit",
+            name = "Twisted Kit",
+            description = "Color of light when a twisted kit is obtained",
             position = 6,
-			section = colorsSection
-	)
-	default Color twistedKit()
-	{
-		return Color.GREEN;
-	}
+            section = colorsSection
+    )
+    default Color twistedKit()
+    {
+        return Color.GREEN;
+    }
 
     @ConfigItem(
             keyName = "enableKit",
@@ -152,17 +152,17 @@ public interface CoxLightColorsConfig extends Config
         return true;
     }
 
-	@ConfigItem(
-			keyName = "olmEntrance",
-			name = "Olm Entrance",
-			description = "Color of the barrier used to enter the Olm room",
+    @ConfigItem(
+            keyName = "olmEntrance",
+            name = "Olm Entrance",
+            description = "Color of the barrier used to enter the Olm room",
             position = 8,
-			section = colorsSection
-	)
-	default Color olmEntrance()
-	{
-		return Color.decode("#8CFF0B");
-	}
+            section = colorsSection
+    )
+    default Color olmEntrance()
+    {
+        return Color.decode("#8CFF0B");
+    }
 
     @ConfigItem(
             keyName = "enableEntrance",
@@ -180,8 +180,8 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupOneColor",
             name = "Group 1",
             description = "Color of the light when an item from group 1 is obtained",
-            position = 10,
-            section = colorsSection
+            position = 0,
+            section = uniquesSection
     )
     default Color groupOneColor()
     {
@@ -189,23 +189,11 @@ public interface CoxLightColorsConfig extends Config
     }
 
     @ConfigItem(
-            keyName = "enableGroupOne",
-            name = "Recolor group 1",
-            description = "Enable recoloring the light of the chest when a unique from group 1 is obtained",
-            position = 11,
-            section = togglesSection
-    )
-    default boolean enableGroupOne()
-    {
-        return true;
-    }
-
-    @ConfigItem(
             keyName = "groupTwoColor",
             name = "Group 2",
             description = "Color of the light when an item from group 2 is obtained",
-            position = 12,
-            section = colorsSection
+            position = 1,
+            section = uniquesSection
     )
     default Color groupTwoColor()
     {
@@ -213,23 +201,11 @@ public interface CoxLightColorsConfig extends Config
     }
 
     @ConfigItem(
-            keyName = "enableGroupTwo",
-            name = "Recolor group 2",
-            description = "Enable recoloring the light of the chest when a unique from group 2 is obtained",
-            position = 13,
-            section = togglesSection
-    )
-    default boolean enableGroupTwo()
-    {
-        return true;
-    }
-
-    @ConfigItem(
             keyName = "groupThreeColor",
             name = "Group 3",
             description = "Color of the light when an item from group 3 is obtained",
-            position = 14,
-            section = colorsSection
+            position = 2,
+            section = uniquesSection
     )
     default Color groupThreeColor()
     {
@@ -237,23 +213,11 @@ public interface CoxLightColorsConfig extends Config
     }
 
     @ConfigItem(
-            keyName = "enableGroupThree",
-            name = "Recolor group 3",
-            description = "Enable recoloring the light of the chest when a unique from group 3 is obtained",
-            position = 15,
-            section = togglesSection
-    )
-    default boolean enableGroupThree()
-    {
-        return true;
-    }
-
-	@ConfigItem(
             keyName = "groupTwistedBow",
-			name = "Twisted bow",
-			description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
-            position = 16,
-			section = uniquesSection
+            name = "Twisted bow",
+            description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 3,
+            section = uniquesSection
     )
     default ItemGroup groupTwistedBow()
     {
@@ -264,6 +228,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupKodai",
             name = "Kodai insignia",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 4,
             section = uniquesSection
     )
     default ItemGroup groupKodai()
@@ -275,6 +240,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupElderMaul",
             name = "Elder maul",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 5,
             section = uniquesSection
     )
     default ItemGroup groupElderMaul()
@@ -286,6 +252,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupClaws",
             name = "Dragon claws",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 6,
             section = uniquesSection
     )
     default ItemGroup groupClaws()
@@ -297,6 +264,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupAncestralHat",
             name = "Ancestral hat",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 7,
             section = uniquesSection
     )
     default ItemGroup groupAncestralHat()
@@ -308,6 +276,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupAncestralTop",
             name = "Ancestral robe top",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 8,
             section = uniquesSection
     )
     default ItemGroup groupAncestralTop()
@@ -319,6 +288,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupAncestralBottom",
             name = "Ancestral robe bottom",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 9,
             section = uniquesSection
     )
     default ItemGroup groupAncestralBottom()
@@ -330,6 +300,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupDinhs",
             name = "Dinh's bulwark",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 10,
             section = uniquesSection
     )
     default ItemGroup groupDinhs()
@@ -341,6 +312,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupDHCB",
             name = "Dragon hunter crossbow",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 11,
             section = uniquesSection
     )
     default ItemGroup groupDHCB()
@@ -352,6 +324,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupBuckler",
             name = "Twisted buckler",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 12,
             section = uniquesSection
     )
     default ItemGroup groupBuckler()
@@ -363,6 +336,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupArcane",
             name = "Arcane prayer scroll",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 13,
             section = uniquesSection
     )
     default ItemGroup groupArcane()
@@ -374,6 +348,7 @@ public interface CoxLightColorsConfig extends Config
             keyName = "groupDex",
             name = "Dexterous prayer scroll",
             description = "Group color to use when this item is obtained. If no group is specified, the 'unique' color will be used",
+            position = 14,
             section = uniquesSection
     )
     default ItemGroup groupDex()
@@ -381,4 +356,39 @@ public interface CoxLightColorsConfig extends Config
         return ItemGroup.NONE;
     }
 
+    @ConfigItem(
+            keyName = "enableGroupOne",
+            name = "Recolor group 1",
+            description = "Enable recoloring the light of the chest when a unique from group 1 is obtained",
+            position = 15,
+            section = uniquesSection
+    )
+    default boolean enableGroupOne()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "enableGroupTwo",
+            name = "Recolor group 2",
+            description = "Enable recoloring the light of the chest when a unique from group 2 is obtained",
+            position = 16,
+            section = uniquesSection
+    )
+    default boolean enableGroupTwo()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "enableGroupThree",
+            name = "Recolor group 3",
+            description = "Enable recoloring the light of the chest when a unique from group 3 is obtained",
+            position = 17,
+            section = uniquesSection
+    )
+    default boolean enableGroupThree()
+    {
+        return true;
+    }
 }
