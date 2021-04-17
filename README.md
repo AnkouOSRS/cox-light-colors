@@ -12,6 +12,10 @@ If you plan on using the "Specific unique" feature for this plugin, the plugin i
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+ - **4/17/21 (1.3)**  
+ Make several changes to the logic that is used for coloring the light for uniques that are in groups. This should 
+ resolve the issue where items in groups were showing the normal unique light for most users. I have marked the feature 
+ as "experimental" until I can be sure this is no longer occurring for some users.
  - **8/18/20 (1.2)**    
 Add the ability to classify specific uniques into 3 separate groups each with their own color. Add toggles for
  each type of recolor. Other bug fixes.
