@@ -138,9 +138,9 @@ public class CoxLightColorsPlugin extends Plugin
 
 				if (uniques.contains(dropName))
 				{
-					log.info("Special loot: {} received by {}", dropName, dropReceiver);
 					if (dropReceiver.equals(client.getLocalPlayer().getName()))
 					{
+						log.info("Special loot: {} received by {}", dropName, dropReceiver);
 						uniqueItemReceived = dropName;
 						if (lightObject != null)
 						{
@@ -152,7 +152,7 @@ public class CoxLightColorsPlugin extends Plugin
 						}
 						else
 						{
-							log.error("Light object null after local player received drop");
+							log.info("Light object null after local player received drop");
 						}
 					}
 					else
@@ -334,6 +334,7 @@ public class CoxLightColorsPlugin extends Plugin
 		if (isLight && !StringUtils.isBlank(uniqueItemReceived) && color != getUniqueGroupColor(uniqueItemReceived))
 		{
 			color = getUniqueGroupColor(uniqueItemReceived);
+			rs2hsb = colorToRs2hsb(color);
 		}
 		log.debug("Calling replaceFaceColorValues with color: {}, on {}", String.format("#%06x", color.getRGB() & 0x00FFFFFF),
 				(isLight ? "light" : "entrance"));
