@@ -115,7 +115,7 @@ public class CoxLightColorsPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage chatMessage)
 	{
-		if (client.getLocalPlayer() == null)
+		if (client.getLocalPlayer() == null || client.getLocalPlayer().getName() == null)
 			return;
 
 		if (chatMessage.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION)
@@ -133,12 +133,12 @@ public class CoxLightColorsPlugin extends Plugin
 
 			if (matcher.find())
 			{
-				final String dropReceiver = matcher.group(1).trim();
+				final String dropReceiver = Text.sanitize(matcher.group(1)).trim();
 				final String dropName = matcher.group(2).trim();
 
 				if (uniques.contains(dropName))
 				{
-					if (dropReceiver.equals(client.getLocalPlayer().getName()))
+					if (dropReceiver.equals(Text.sanitize(client.getLocalPlayer().getName())))
 					{
 						log.info("Special loot: {} received by {}", dropName, dropReceiver);
 						uniqueItemReceived = dropName;
