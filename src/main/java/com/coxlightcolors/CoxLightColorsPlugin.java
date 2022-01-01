@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -39,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.awt.Point;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,6 +80,8 @@ public class CoxLightColorsPlugin extends Plugin
 	private static final int LIGHT_OBJECT_ID = 28848;
 	private static final int OLM_ENTRANCE_ID = 29879;
 	private static final int VARBIT_LIGHT_TYPE = 5456;
+	private static final Point OLM_ENTRANCE_LOCATION = new Point(3233,5729);
+	private static final int OLM_ENTRANCE_REGION_ID = 12889;
 
 	private static Integer currentLightType; // Default (null), No Unique (0), Unique (1), Dust (2), Twisted Kit (3)
 
@@ -140,7 +144,7 @@ public class CoxLightColorsPlugin extends Plugin
 				{
 					if (dropReceiver.equals(Text.sanitize(client.getLocalPlayer().getName())))
 					{
-						log.info("Special loot: {} received by {}", dropName, dropReceiver);
+						log.debug("Special loot: {} received by {}", dropName, dropReceiver);
 						uniqueItemReceived = dropName;
 						if (lightObject != null)
 						{
@@ -152,7 +156,7 @@ public class CoxLightColorsPlugin extends Plugin
 						}
 						else
 						{
-							log.info("Light object null after local player received drop");
+							log.debug("Light object null after local player received drop");
 						}
 					}
 					else
@@ -168,13 +172,13 @@ public class CoxLightColorsPlugin extends Plugin
 	public void onGameObjectSpawned(GameObjectSpawned event)
 	{
 		GameObject obj = event.getGameObject();
-		if (obj.getId() == LIGHT_OBJECT_ID)
+		if (LIGHT_OBJECT_ID == obj.getId())
 		{
 			log.info("Light gameObject spawned");
 			lightObject = obj;
 			updateLightColor();
 		}
-		else if (obj.getId() == OLM_ENTRANCE_ID)
+		else if (OLM_ENTRANCE_ID == obj.getId() && isAtOlmEntranceLocation(obj))
 		{
 			entranceObject = obj;
 			if (config.enableEntrance())
@@ -187,12 +191,12 @@ public class CoxLightColorsPlugin extends Plugin
 	@Subscribe
 	public void onGameObjectDespawned(GameObjectDespawned event)
 	{
-		if (event.getGameObject().getId() == LIGHT_OBJECT_ID)
+		if (LIGHT_OBJECT_ID == event.getGameObject().getId())
 		{
 			log.info("Light gameObject despawned");
 			lightObject = null;
 		}
-		else if (event.getGameObject().getId() == OLM_ENTRANCE_ID)
+		else if (OLM_ENTRANCE_ID == event.getGameObject().getId())
 		{
 			entranceObject = null;
 		}
@@ -201,13 +205,15 @@ public class CoxLightColorsPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
+		if (!event.getGroup().equals("coxlightcolors"))
+			return;
 		resetFaceColors();
 		if (lightObject != null)
 		{
 			recolorAllFaces(lightObject.getRenderable().getModel(),
 					(uniqueItemReceived != null ? getUniqueGroupColor(uniqueItemReceived) : getNewLightColor()), true);
 		}
-		if (entranceObject != null)
+		if (entranceObject != null && isAtOlmEntranceLocation(entranceObject))
 		{
 			if (config.enableEntrance())
 			{
@@ -418,6 +424,13 @@ public class CoxLightColorsPlugin extends Plugin
 				faceColors3[i] = globalReplacement;
 			}
 		}
+	}
+
+	private boolean isAtOlmEntranceLocation(GameObject obj)
+	{
+		WorldPoint p = WorldPoint.fromLocalInstance(client, obj.getLocalLocation());
+		return OLM_ENTRANCE_REGION_ID == p.getRegionID() && OLM_ENTRANCE_LOCATION.getX() == p.getX()
+				&& OLM_ENTRANCE_LOCATION.getY() == p.getY();
 	}
 }
 

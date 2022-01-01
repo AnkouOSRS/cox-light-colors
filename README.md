@@ -12,6 +12,9 @@ If you plan on using the "Specific unique" feature for this plugin, the plugin i
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+ - **1/1/22 (1.3.3)**  
+ Fix an issue where random objects would sometimes get recolored instead of the entrance to olm. Removed the "Experimental" 
+ label on the config for groups as this has been confirmed to be working properly since 1.3.2. 
  - **8/20/21 (1.3.2)**  
  Finally fully resolved the issue that was causing the group colors to not work for some players once and for all.
  - **4/17/21 (1.3)**  
