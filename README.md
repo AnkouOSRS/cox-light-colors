@@ -12,6 +12,8 @@ If you plan on using the "Specific unique" feature for this plugin, the plugin i
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+ - **8/20/21 (1.3.2)**  
+ Finally fully resolved the issue that was causing the group colors to not work for some players once and for all.
  - **4/17/21 (1.3)**  
  Make several changes to the logic that is used for coloring the light for uniques that are in groups. This should 
  resolve the issue where items in groups were showing the normal unique light for most users. I have marked the feature 
