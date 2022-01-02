@@ -42,7 +42,7 @@ public interface CoxLightColorsConfig extends Config
     String colorsSection = "colors";
 
     @ConfigSection(
-            name = "Groups (Experimental)",
+            name = "Groups",
             description = "Uniques that, when obtained, will use the 'Specific Unique' color for the light",
             position = 1
     )
