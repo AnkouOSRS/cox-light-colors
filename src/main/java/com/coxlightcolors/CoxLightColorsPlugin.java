@@ -28,8 +28,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.VarbitID;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.callback.RenderCallback;
+import net.runelite.client.callback.RenderCallbackManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -41,35 +46,42 @@ import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.Point;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @PluginDescriptor(
-		name = "CoX Light Colors",
-		description = "Set the colors of the light above the loot chest in Chambers of Xeric",
-		tags = {"bosses", "combat", "pve", "raid"}
+	name = "CoX Light Colors",
+	description = "Set the colors of the light above the loot chest in Chambers of Xeric",
+	tags = {"bosses", "combat", "pve", "raid"}
 )
 @Slf4j
-public class CoxLightColorsPlugin extends Plugin
+public class CoxLightColorsPlugin extends Plugin implements RenderCallback
 {
 	private static final Set<String> uniques = ImmutableSet.of("Dexterous prayer scroll", "Arcane prayer scroll", "Twisted buckler",
-			"Dragon hunter crossbow", "Dinh's bulwark", "Ancestral hat", "Ancestral robe top", "Ancestral robe bottom",
-			"Dragon claws", "Elder maul", "Kodai insignia", "Twisted bow");
+		"Dragon hunter crossbow", "Dinh's bulwark", "Ancestral hat", "Ancestral robe top", "Ancestral robe bottom",
+		"Dragon claws", "Elder maul", "Kodai insignia", "Twisted bow");
 
 	@Inject
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private RenderCallbackManager renderCallbackManager;
+
+	@Inject
 	private CoxLightColorsConfig config;
 
 	private GameObject lightObject;
+	private RuneLiteObject fakeLightObject;
 	private GameObject entranceObject;
 	private String uniqueItemReceived;
-
-	private int[] defaultLightFaceColors1;
-	private int[] defaultLightFaceColors2;
-	private int[] defaultLightFaceColors3;
 
 	private int[] defaultEntranceFaceColors1;
 	private int[] defaultEntranceFaceColors2;
@@ -80,7 +92,7 @@ public class CoxLightColorsPlugin extends Plugin
 	private static final int LIGHT_OBJECT_ID = 28848;
 	private static final int OLM_ENTRANCE_ID = 29879;
 	private static final int VARBIT_LIGHT_TYPE = 5456;
-	private static final Point OLM_ENTRANCE_LOCATION = new Point(3233,5729);
+	private static final Point OLM_ENTRANCE_LOCATION = new Point(3233, 5729);
 	private static final int OLM_ENTRANCE_REGION_ID = 12889;
 
 	private static Integer currentLightType; // Default (null), No Unique (0), Unique (1), Dust (2), Twisted Kit (3)
@@ -94,24 +106,41 @@ public class CoxLightColorsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		updateLightColor();
+		renderCallbackManager.register(this);
+		updateLight();
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		resetFaceColors();
+		clearFakeLightObject();
 		uniqueItemReceived = null;
 		lightObject = null;
 		entranceObject = null;
+		renderCallbackManager.unregister(this);
+	}
+
+	@Override
+	public boolean drawObject(Scene scene, TileObject object)
+	{
+		// Hide the real light object if we have a fake one
+		return LIGHT_OBJECT_ID != object.getId() || fakeLightObject == null;
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
-		updateLightColor();
-		if (!isInRaid())
+		if (varbitChanged.getVarbitId() == VARBIT_LIGHT_TYPE)
 		{
+			log.debug("Light type varbit changed to {}", varbitChanged.getValue());
+			currentLightType = varbitChanged.getValue();
+			updateLight();
+		}
+		if (varbitChanged.getVarbitId() == VarbitID.RAIDS_CLIENT_INDUNGEON && !isInRaid())
+		{
+			log.debug("Player has left raid, clearing light object");
+			clearFakeLightObject();
 			resetFaceColors();
 		}
 	}
@@ -120,7 +149,9 @@ public class CoxLightColorsPlugin extends Plugin
 	public void onChatMessage(ChatMessage chatMessage)
 	{
 		if (client.getLocalPlayer() == null || client.getLocalPlayer().getName() == null)
+		{
 			return;
+		}
 
 		if (chatMessage.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION)
 		{
@@ -149,10 +180,9 @@ public class CoxLightColorsPlugin extends Plugin
 						if (lightObject != null)
 						{
 							Color newLightColor = getUniqueGroupColor(dropName);
-							log.info("Light object not null when special loot received by local player. Recoloring light " +
-									"based on unique group: {}", String.format("#%06x", newLightColor.getRGB() & 0x00FFFFFF));
-							recolorAllFaces(lightObject.getRenderable().getModel(),
-									newLightColor, true);
+							log.debug("Light object not null when special loot received by local player. Recoloring light " +
+								"based on unique group: {}", String.format("#%06x", newLightColor.getRGB() & 0x00FFFFFF));
+							clientThread.invoke(() -> spawnFakeLightObject(lightObject.getLocalLocation(), newLightColor));
 						}
 						else
 						{
@@ -176,14 +206,14 @@ public class CoxLightColorsPlugin extends Plugin
 		{
 			log.info("Light gameObject spawned");
 			lightObject = obj;
-			updateLightColor();
+			updateLight();
 		}
 		else if (OLM_ENTRANCE_ID == obj.getId() && isAtOlmEntranceLocation(obj))
 		{
 			entranceObject = obj;
 			if (config.enableEntrance())
 			{
-				recolorAllFaces(obj.getRenderable().getModel(), config.olmEntrance(), false);
+				clientThread.invokeLater(() -> recolorAllFaces(obj.getRenderable().getModel(), config.olmEntrance()));
 			}
 		}
 	}
@@ -194,6 +224,7 @@ public class CoxLightColorsPlugin extends Plugin
 		if (LIGHT_OBJECT_ID == event.getGameObject().getId())
 		{
 			log.info("Light gameObject despawned");
+			clearFakeLightObject();
 			lightObject = null;
 		}
 		else if (OLM_ENTRANCE_ID == event.getGameObject().getId())
@@ -206,30 +237,82 @@ public class CoxLightColorsPlugin extends Plugin
 	public void onConfigChanged(ConfigChanged event)
 	{
 		if (!event.getGroup().equals("coxlightcolors"))
+		{
 			return;
+		}
 		resetFaceColors();
 		if (lightObject != null)
 		{
-			recolorAllFaces(lightObject.getRenderable().getModel(),
-					(uniqueItemReceived != null ? getUniqueGroupColor(uniqueItemReceived) : getNewLightColor()), true);
+			updateLight();
 		}
 		if (entranceObject != null && isAtOlmEntranceLocation(entranceObject))
 		{
 			if (config.enableEntrance())
 			{
-				recolorAllFaces(entranceObject.getRenderable().getModel(), config.olmEntrance(), false);
+				clientThread.invokeLater(() -> recolorAllFaces(entranceObject.getRenderable().getModel(), config.olmEntrance()));
 			}
 		}
 	}
 
-	private void updateLightColor()
+	private void updateLight()
 	{
+		clearFakeLightObject();
+
+		Color color = getUpdatedLightColor();
+		if (color == null)
+		{
+			return;
+		}
+
 		if (lightObject != null)
 		{
-			currentLightType = client.getVarbitValue(VARBIT_LIGHT_TYPE);
-			recolorAllFaces(lightObject.getRenderable().getModel(),
-					(uniqueItemReceived != null ? getUniqueGroupColor(uniqueItemReceived) : getNewLightColor()), true);
+			LocalPoint lightLocation = lightObject.getLocalLocation();
+			clientThread.invoke(() -> fakeLightObject = spawnFakeLightObject(lightLocation, color));
 		}
+	}
+
+	private RuneLiteObject spawnFakeLightObject(LocalPoint point, Color color)
+	{
+		log.debug("Spawning new fake light object at {},{} with color {}", point.getX(), point.getY(),
+			String.format("#%06x", color.getRGB() & 0x00FFFFFF));
+
+		int FAKE_LIGHT_HEIGHT_OFFSET = -100; // Height offset to position the light beam above the chest
+		int FAKE_LIGHT_SCALE_XY = 128; // Scale to match the in-game light beam size
+		int FAKE_LIGHT_SCALE_Z = 200;
+
+		RuneLiteObject lightBeam = client.createRuneLiteObject();
+		ModelData lightBeamModel = Objects.requireNonNull(client.loadModelData(5809))
+			.cloneVertices()
+			.translate(0, FAKE_LIGHT_HEIGHT_OFFSET, 0)
+			.scale(FAKE_LIGHT_SCALE_XY, FAKE_LIGHT_SCALE_Z, FAKE_LIGHT_SCALE_XY)
+			.cloneColors();
+
+		lightBeamModel.recolor(lightBeamModel.getFaceColors()[0],
+			JagexColor.rgbToHSL(color.getRGB(), 1.0d));
+		lightBeam.setModel(lightBeamModel.light());
+
+		WorldView wv = client.getTopLevelWorldView();
+		lightBeam.setLocation(point, wv.getPlane());
+		lightBeam.setActive(true);
+
+		log.debug("Fake light object spawned at local point X: {}, Y: {}", point.getX(), point.getY());
+		return lightBeam;
+	}
+
+	private void clearFakeLightObject()
+	{
+		clientThread.invoke(() -> {
+			if (fakeLightObject != null)
+			{
+				fakeLightObject.setActive(false);
+				fakeLightObject = null;
+			}
+		});
+	}
+
+	private Color getUpdatedLightColor()
+	{
+		return uniqueItemReceived != null ? getUniqueGroupColor(uniqueItemReceived) : getNonUniqueLightColor();
 	}
 
 	private Color getUniqueGroupColor(String uniqueName)
@@ -243,7 +326,7 @@ public class CoxLightColorsPlugin extends Plugin
 			else
 			{
 				log.info("getUniqueGroupColor() called with {} unique string", null == uniqueName ? "null" : "empty");
-				return getNewLightColor();
+				return getNonUniqueLightColor();
 			}
 		}
 
@@ -275,7 +358,7 @@ public class CoxLightColorsPlugin extends Plugin
 				return getGroupColor(config.groupDex());
 			default:
 				log.info("Unique received did not match a known item from CoX: {}", uniqueName);
-				return getNewLightColor();
+				return getNonUniqueLightColor();
 		}
 	}
 
@@ -284,20 +367,23 @@ public class CoxLightColorsPlugin extends Plugin
 		switch (group)
 		{
 			case ONE:
-				return (config.enableGroupOne() ? config.groupOneColor() : getNewLightColor());
+				return (config.enableGroupOne() ? config.groupOneColor() : getNonUniqueLightColor());
 			case TWO:
-				return (config.enableGroupTwo() ? config.groupTwoColor() : getNewLightColor());
+				return (config.enableGroupTwo() ? config.groupTwoColor() : getNonUniqueLightColor());
 			case THREE:
-				return (config.enableGroupThree() ? config.groupThreeColor() : getNewLightColor());
+				return (config.enableGroupThree() ? config.groupThreeColor() : getNonUniqueLightColor());
 			default:
-				return getNewLightColor();
+				return getNonUniqueLightColor();
 		}
 	}
 
-	private Color getNewLightColor()
+	private Color getNonUniqueLightColor()
 	{
 		if (currentLightType == null)
+		{
 			return null;
+		}
+
 		switch (currentLightType)
 		{
 			case 1:
@@ -313,7 +399,7 @@ public class CoxLightColorsPlugin extends Plugin
 		}
 	}
 
-	private void recolorAllFaces(Model model, Color color, boolean isLight)
+	private void recolorAllFaces(Model model, Color color)
 	{
 		if (model == null || color == null)
 		{
@@ -325,31 +411,20 @@ public class CoxLightColorsPlugin extends Plugin
 		int[] faceColors2 = model.getFaceColors2();
 		int[] faceColors3 = model.getFaceColors3();
 
-		if (isLight && (defaultLightFaceColors1 == null || defaultLightFaceColors1.length == 0))
-		{
-			defaultLightFaceColors1 = faceColors1.clone();
-			defaultLightFaceColors2 = faceColors2.clone();
-			defaultLightFaceColors3 = faceColors3.clone();
-		}
-		else if (defaultEntranceFaceColors1 == null || defaultEntranceFaceColors1.length == 0)
+		if (defaultEntranceFaceColors1 == null || defaultEntranceFaceColors1.length == 0)
 		{
 			defaultEntranceFaceColors1 = faceColors1.clone();
 			defaultEntranceFaceColors2 = faceColors2.clone();
 			defaultEntranceFaceColors3 = faceColors3.clone();
 		}
-		if (isLight && !StringUtils.isBlank(uniqueItemReceived) && color != getUniqueGroupColor(uniqueItemReceived))
-		{
-			color = getUniqueGroupColor(uniqueItemReceived);
-			rs2hsb = colorToRs2hsb(color);
-		}
-		log.debug("Calling replaceFaceColorValues with color: {}, on {}", String.format("#%06x", color.getRGB() & 0x00FFFFFF),
-				(isLight ? "light" : "entrance"));
-		replaceFaceColorValues(faceColors1, faceColors2, faceColors3, rs2hsb);
+
+		log.debug("Calling replaceFaceColorValues with color: {}", String.format("#%06x", color.getRGB() & 0x00FFFFFF));
+		replaceFaceColorValues(rs2hsb, faceColors1, faceColors2, faceColors3);
 	}
 
 	private boolean isInRaid()
 	{
-		return (client.getGameState() == GameState.LOGGED_IN && client.getVar(Varbits.IN_RAID) == 1);
+		return (client.getGameState() == GameState.LOGGED_IN && client.getVarbitValue(VarbitID.RAIDS_CLIENT_INDUNGEON) == 1);
 	}
 
 	private int colorToRs2hsb(Color color)
@@ -360,68 +435,57 @@ public class CoxLightColorsPlugin extends Plugin
 		// low saturation
 		hsbVals[2] -= Math.min(hsbVals[1], hsbVals[2] / 2);
 
-		int encode_hue = (int)(hsbVals[0] * 63);
-		int encode_saturation = (int)(hsbVals[1] * 7);
-		int encode_brightness = (int)(hsbVals[2] * 127);
+		int encode_hue = (int) (hsbVals[0] * 63);
+		int encode_saturation = (int) (hsbVals[1] * 7);
+		int encode_brightness = (int) (hsbVals[2] * 127);
 		return (encode_hue << 10) + (encode_saturation << 7) + (encode_brightness);
 	}
 
 	private void resetFaceColors()
 	{
-		if (lightObject != null && lightObject.getRenderable().getModel() != null && defaultLightFaceColors1 != null && defaultLightFaceColors2 != null && defaultLightFaceColors3 != null)
+		clientThread.invokeLater(() ->
 		{
-			Model model = lightObject.getRenderable().getModel();
-			replaceFaceColorValues(model.getFaceColors1(), model.getFaceColors2(), model.getFaceColors3(),
-					defaultLightFaceColors1, defaultLightFaceColors2, defaultLightFaceColors3);
-			defaultLightFaceColors1 = null;
-			defaultLightFaceColors2 = null;
-			defaultLightFaceColors3 = null;
+			boolean shouldReset = Optional.ofNullable(entranceObject)
+				.map(GameObject::getRenderable)
+				.map(Renderable::getModel)
+				.isPresent()
+				&& Stream.of(defaultEntranceFaceColors1, defaultEntranceFaceColors2, defaultEntranceFaceColors3).allMatch(Objects::nonNull);
+			if (shouldReset)
+			{
+				Model model = entranceObject.getRenderable().getModel();
+				replaceFaceColorValues(model.getFaceColors1(), defaultEntranceFaceColors1, model.getFaceColors2(),
+					defaultEntranceFaceColors2, model.getFaceColors3(), defaultEntranceFaceColors3);
+				defaultEntranceFaceColors1 = defaultEntranceFaceColors2 = defaultEntranceFaceColors3 = null;
+			}
+		});
+	}
+
+	private void replaceFaceColorValues(int[]... pairs)
+	{
+		if (pairs.length % 2 != 0)
+		{
+			return;
 		}
-		if (entranceObject != null && entranceObject.getRenderable().getModel() != null
-				&& defaultEntranceFaceColors1 != null && defaultEntranceFaceColors2 != null && defaultEntranceFaceColors3 != null)
+
+		for (int i = 0; i < pairs.length; i += 2)
 		{
-			Model model = entranceObject.getRenderable().getModel();
-			replaceFaceColorValues(model.getFaceColors1(), model.getFaceColors2(), model.getFaceColors3(),
-					defaultEntranceFaceColors1, defaultEntranceFaceColors2, defaultEntranceFaceColors3);
-			defaultEntranceFaceColors1 = null;
-			defaultEntranceFaceColors2 = null;
-			defaultEntranceFaceColors3 = null;
+			int[] destination = pairs[i];
+			int[] source = pairs[i + 1];
+
+			if (source.length == destination.length)
+			{
+				System.arraycopy(source, 0, destination, 0, source.length);
+			}
 		}
 	}
 
-	private void replaceFaceColorValues(int[] faceColors1, int[] faceColors2, int[] faceColors3,
-										int[] newFaceColors1, int[] newFaceColors2, int[] newFaceColors3)
+	private void replaceFaceColorValues(int globalReplacement, int[]... faceArrays)
 	{
-		if (faceColors1.length == newFaceColors1.length && faceColors2.length == newFaceColors2.length
-				&& faceColors3.length == newFaceColors3.length)
+		for (int[] faceArray : faceArrays)
 		{
-			System.arraycopy(newFaceColors1, 0, faceColors1, 0, faceColors1.length);
-			System.arraycopy(newFaceColors2, 0, faceColors2, 0, faceColors1.length);
-			System.arraycopy(newFaceColors3, 0, faceColors3, 0, faceColors1.length);
-		}
-	}
-
-	private void replaceFaceColorValues(int[] faceColors1, int[] faceColors2, int[] faceColors3, int globalReplacement)
-	{
-		if (faceColors1.length > 0)
-		{
-			for (int i = 0; i < faceColors1.length; i++)
+			if (faceArray != null)
 			{
-				faceColors1[i] = globalReplacement;
-			}
-		}
-		if (faceColors2.length > 0)
-		{
-			for (int i = 0; i < faceColors2.length; i++)
-			{
-				faceColors2[i] = globalReplacement;
-			}
-		}
-		if (faceColors3.length > 0)
-		{
-			for (int i = 0; i < faceColors3.length; i++)
-			{
-				faceColors3[i] = globalReplacement;
+				Arrays.fill(faceArray, globalReplacement);
 			}
 		}
 	}
@@ -430,7 +494,7 @@ public class CoxLightColorsPlugin extends Plugin
 	{
 		WorldPoint p = WorldPoint.fromLocalInstance(client, obj.getLocalLocation());
 		return OLM_ENTRANCE_REGION_ID == p.getRegionID() && OLM_ENTRANCE_LOCATION.getX() == p.getX()
-				&& OLM_ENTRANCE_LOCATION.getY() == p.getY();
+			&& OLM_ENTRANCE_LOCATION.getY() == p.getY();
 	}
 }
 

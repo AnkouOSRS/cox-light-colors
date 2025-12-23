@@ -12,6 +12,8 @@ If you plan on using the "Specific unique" feature for this plugin, the plugin i
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+ - **12/22/25 (1.3.4)**  
+Replace recoloring logic for the light above the chest to fix an issue where the light would not change colors for some users.
  - **1/1/22 (1.3.3)**  
  Fix an issue where random objects would sometimes get recolored instead of the entrance to olm. Removed the "Experimental" 
  label on the config for groups as this has been confirmed to be working properly since 1.3.2. 
