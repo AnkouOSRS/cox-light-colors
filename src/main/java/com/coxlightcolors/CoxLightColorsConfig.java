@@ -89,7 +89,7 @@ public interface CoxLightColorsConfig extends Config
     )
     default Color unique()
     {
-        return Color.decode("#F155F5");
+        return Color.decode("#DA56F5");
     }
 
     @ConfigItem(
