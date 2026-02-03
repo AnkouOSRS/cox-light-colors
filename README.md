@@ -12,6 +12,8 @@ If you plan on using the "Specific unique" feature for this plugin, the plugin i
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+- **2/2/26 (1.3.5)**  
+Fix issue where a white and unique light would appear at the same time when receiving a unique drop. Fix unique light not clearing properly between raids.
  - **12/22/25 (1.3.4)**  
 Replace recoloring logic for the light above the chest to fix an issue where the light would not change colors for some users.
  - **1/1/22 (1.3.3)**  

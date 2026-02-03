@@ -182,7 +182,8 @@ public class CoxLightColorsPlugin extends Plugin implements RenderCallback
 							Color newLightColor = getUniqueGroupColor(dropName);
 							log.debug("Light object not null when special loot received by local player. Recoloring light " +
 								"based on unique group: {}", String.format("#%06x", newLightColor.getRGB() & 0x00FFFFFF));
-							clientThread.invoke(() -> spawnFakeLightObject(lightObject.getLocalLocation(), newLightColor));
+							clearFakeLightObject();
+							clientThread.invoke(() -> fakeLightObject = spawnFakeLightObject(lightObject.getLocalLocation(), newLightColor));
 						}
 						else
 						{
