@@ -95,7 +95,7 @@ public class CoxLightColorsPlugin extends Plugin implements RenderCallback
 	private static final Point OLM_ENTRANCE_LOCATION = new Point(3233, 5729);
 	private static final int OLM_ENTRANCE_REGION_ID = 12889;
 
-	private static Integer currentLightType; // Default (null), No Unique (0), Unique (1), Dust (2), Twisted Kit (3)
+	private Integer currentLightType; // Default (null), No Light (0), Standard loot (1), Unique (2), Dust (3), Twisted Kit (4)
 
 	@Provides
 	CoxLightColorsConfig getConfig(ConfigManager configManager)
@@ -142,6 +142,7 @@ public class CoxLightColorsPlugin extends Plugin implements RenderCallback
 			log.debug("Player has left raid, clearing light object");
 			clearFakeLightObject();
 			resetFaceColors();
+			uniqueItemReceived = null;
 		}
 	}
 
@@ -258,6 +259,12 @@ public class CoxLightColorsPlugin extends Plugin implements RenderCallback
 	private void updateLight()
 	{
 		clearFakeLightObject();
+
+		if (currentLightType == null || currentLightType == 0)
+		{
+			log.debug("updateLight() called with light type {}, not spawning fake light", currentLightType);
+			return;
+		}
 
 		Color color = getUpdatedLightColor();
 		if (color == null)
