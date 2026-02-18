@@ -12,6 +12,8 @@ If you plan on using the "Specific unique" feature for this plugin, the plugin i
 ![Example image](https://i.imgur.com/Kx3ZM77.png)
 
 ### Changelog
+- **2/17/26 (1.3.6)**  
+Fix unique light not clearing properly between raids (hopefully for real this time).
 - **2/2/26 (1.3.5)**  
 Fix issue where a white and unique light would appear at the same time when receiving a unique drop. Fix unique light not clearing properly between raids.
  - **12/22/25 (1.3.4)**  
